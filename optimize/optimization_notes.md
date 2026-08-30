@@ -73,3 +73,28 @@ exclusive for this pose detector. Further detector gains require either a new yo
 decode-stable under TRT, or a smaller detector re-trained for the hand task — both beyond an
 in-place optimization pass. This is a measured, decisive honest negative that closes out the
 detector bottleneck.
+
+## Software pipelining (double-buffer) — near-negative (2026-08-30)
+
+Overlapped the CPU crop/transfer/postprocess of frame N+1 with the GPU TRT inference of frame N
+via a two-buffer CUDA-stream pipeline (`optimize/bench_pipelined.py`), vs the fully serial path
+that inserts `torch.cuda.synchronize()` between every stage. Same detector, same crop code,
+same TRT FP16 engine — only the scheduling differs.
+
+| Scheduling | FPS | mean ms | p95 ms |
+|---|---:|---:|---:|
+| Serial | 28.1 | 35.64 | 40.75 |
+| Pipelined | 28.9 | 34.62 | 39.82 |
+
+Speedup **1.03x** (throughput 28.1→28.9 FPS). Outputs remain **bit-identical** across the two
+schedulings (max |joints| diff = 0.0), so the overlap is provably correctness-safe.
+
+The gain is marginal because the pipeline was never CPU-bubble-bound: detector forward (13.8ms)
+and TRT reconstruction (12.6ms) are both GPU compute and together saturate the SMs, so the
+CPU-side crop/transfer there was to hide is only the ~1ms real math. Overlapping CPU work under
+a saturated-GPU tail cannot recover GPU-bound time. This is consistent with the earlier
+multi-stream negative: the wall is GPU SMs, not Python/transfer overhead.
+
+**Verdict**: software pipelining yields no meaningful end-to-end gain here and is a near-negative,
+recorded for completeness. The e2e pipeline stays single-threaded serial (simpler, no correctness
+risk) at its standing 28.6-28.9 FPS.

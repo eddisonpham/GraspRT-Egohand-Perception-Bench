@@ -1,0 +1,12 @@
+{
+  "variant": "fast",
+  "n_images": 120,
+  "max_joints_diff": 0.0,
+  "serial_fps": 28.06,
+  "serial_mean_ms": 35.641,
+  "serial_p95_ms": 40.751,
+  "pipelined_fps": 28.89,
+  "pipelined_mean_ms": 34.62,
+  "pipelined_p95_ms": 39.82,
+  "speedup_x": 1.03
+}
