@@ -1,0 +1,83 @@
+{
+  "clips": [
+    "data/egocentric_clips/clip_01_synthetic.mp4",
+    "data/egocentric_clips/clip_02_synthetic.mp4"
+  ],
+  "per_clip": {
+    "clip_01_synthetic": {
+      "raw": {
+        "jitter_mm": 0.0871,
+        "med_velocity_mm": 0.0704,
+        "distortion_mm": 0.0,
+        "jitter_reduction_pct": 0.0
+      },
+      "ma5": {
+        "jitter_mm": 0.0169,
+        "med_velocity_mm": 0.014,
+        "distortion_mm": 0.0568,
+        "jitter_reduction_pct": 80.54
+      },
+      "ma9": {
+        "jitter_mm": 0.0085,
+        "med_velocity_mm": 0.0067,
+        "distortion_mm": 0.058,
+        "jitter_reduction_pct": 90.18
+      },
+      "one-euro": {
+        "jitter_mm": 0.0311,
+        "med_velocity_mm": 0.0252,
+        "distortion_mm": 0.0386,
+        "jitter_reduction_pct": 64.23
+      }
+    },
+    "clip_02_synthetic": {
+      "raw": {
+        "jitter_mm": 0.0995,
+        "med_velocity_mm": 0.0898,
+        "distortion_mm": 0.0,
+        "jitter_reduction_pct": 0.0
+      },
+      "ma5": {
+        "jitter_mm": 0.0191,
+        "med_velocity_mm": 0.0166,
+        "distortion_mm": 0.0661,
+        "jitter_reduction_pct": 80.78
+      },
+      "ma9": {
+        "jitter_mm": 0.0108,
+        "med_velocity_mm": 0.0098,
+        "distortion_mm": 0.0682,
+        "jitter_reduction_pct": 89.16
+      },
+      "one-euro": {
+        "jitter_mm": 0.0365,
+        "med_velocity_mm": 0.0332,
+        "distortion_mm": 0.0453,
+        "jitter_reduction_pct": 63.32
+      }
+    }
+  },
+  "aggregate": {
+    "raw": {
+      "jitter_mm": 0.0933,
+      "reduction_pct": 0.0,
+      "distortion_mm": 0.0
+    },
+    "ma5": {
+      "jitter_mm": 0.018,
+      "reduction_pct": 80.71,
+      "distortion_mm": 0.0615
+    },
+    "ma9": {
+      "jitter_mm": 0.0097,
+      "reduction_pct": 89.66,
+      "distortion_mm": 0.0631
+    },
+    "one-euro": {
+      "jitter_mm": 0.0338,
+      "reduction_pct": 63.77,
+      "distortion_mm": 0.042
+    }
+  },
+  "method": "TRT FP16 recon, per-frame; filters on joint trajectory (mm)"
+}

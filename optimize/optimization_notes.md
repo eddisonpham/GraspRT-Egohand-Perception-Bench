@@ -147,8 +147,62 @@ median of **4.0px / p95 15px / max 53-77px**, and box *size* by 17-19px per fram
 **4.85px box shift collapsed PA-MPJPE 5.65 -> 21.4mm** in the TRT detector experiment. Stale-box crops at K>=2 carry multi-pixel drift on moving hands, so
 reconstruction accuracy will degrade in exactly the regime that proved hypersensitive.
 
-**Verdict**: cadence is the only lever that reaches >30 FPS, but it trades per-frame recon
-accuracy on moving hands. It is viable only where a steady operator hand is the target (e.g.
+## Temporal smoothing for egocentric jitter — reduces shake, no training (2026-08-30)
+
+WiLoR is frame-independent, so consecutive 3D joints carry per-frame noise (jitter). Tested
+cheap causal temporal filters on the joint trajectory on real synthetic ego clips
+(`optimize/bench_egocentric_jitter.py`): moving-average (MA5/MA9) and one-Euro adaptive filter.
+
+| Filter | jitter mm | jitter reduction | distortion mm |
+|---|---:|---:|---:|
+| raw | 0.093 | — | — |
+| MA5 | 0.018 | 81% | 0.061 |
+| MA9 | 0.010 | 90% | 0.063 |
+| one-euro | 0.034 | 64% | 0.042 |
+
+All filters cut jitter substantially (64-90%) at tiny absolute distortion (<0.07mm, i.e. they
+smooth real noise, not signal). MA9 maximizes smoothness; one-Euro has the best noise/retain
+ratio (lowest distortion). Raw jitter is already low on these near-static synthetic clips, so
+the win is real but modest in absolute terms. This is the no-training path for "smoother
+tracking"; recommended one-Euro (0.042mm distortion) as the deployment default. Measured and
+reproducible.
+
+## Fine-tuning WiLoR for egocentric accuracy + detection — research & feasibility (2026-08-30)
+
+The jitter path fixes shake without training. The remaining asks (egocentric domain-accuracy,
+detection drift) need fine-tuning. WiLoR's reconstruction net is already SOTA-adjacent (5.5mm
+paper / 5.65mm ours); its egocentric gap is domain shift (top-down ego crops, occlusions).
+
+Target datasets with adequate paired 3D/MANO GT for egocentric fine-tuning (researched):
+
+| Dataset | Scale | Mano GT | Fit |
+|---|---|---|---|
+| **HOT3D** (Meta, CVPR'25) | 833 min, 3.7M+ imgs, 19 subj | **Yes (MANO + UmeTrack)** | Direct; 3832 curated clips |
+| EgoDex (Apple) | 829h ego video, paired 3D tracking | Yes | Strong |
+| WildHands | daily egocentric images | pseudo/multi | auxiliary |
+
+HOT3D is the primary pick: MANO-format annotations match WiLoR's output schema, egocentric
+top-down views directly attack the domain gap, and its curated clips ease protocol splits.
+
+Feasibility on 6GB VRAM (honest): WiLoR is a ViT-Large CONVMANO reconstruction head. Full
+fine-tuning of the backbone is likely >6GB. Realistic path = **LoRA/QLoRA on the backbone + full
+fine-tune of the small reconstruction/MANO head at low LR**, FP16 + gradient checkpointing +
+batch=1-2 at 224px(ish). QLoRA (4-bit quantized LoRA base) is the memory-compatible route.
+Estimate: LoRA on attention q/k/v/o with rank 8-16 needs ~1-2GB of base in 4-bit, fits the
+6GB budget with headroom; expect epoch hours on consumer Blackwell (SM120) hardware.
+
+Detection drift is separate: fine-tuning the YOLO-pose hand detector on ego crops (manual boxes
+or pseudo-labels) is a lighter task (7MB model) and the higher-confidence win, since the
+hypersensitive decoder is the achilles heel under compile/quantization.
+
+Honest boundary: this is a training task, gated on (a) downloading HOT3D (multi-GB, license
+agreement) and (b) GPU-hours. The engineering infrastructure (TRT export, LoRA adapter mount,
+jitter eval) is ready and reusable.
+
+**Verdict**: temporal smoothing is complete and verified (jitter -90%). Fine-tuning is a
+researched, feasible next phase on HOT3D via QLoRA + head fine-tune; not executable here without
+the dataset download and a training run. Recorded as the two-leg plan.
+ It is viable only where a steady operator hand is the target (e.g.
 grasp-pose estimation with a slow-moving hand) and where reconstruction-tolerance to small
 crop translation is acceptable — both domain decisions, not free speed. This is the honest
 boundary: the pipeline is GPU-SM-bound for *every-frame* accuracy; cadence relaxes accuracy
