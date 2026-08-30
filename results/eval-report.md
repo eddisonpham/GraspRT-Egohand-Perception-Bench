@@ -1,7 +1,7 @@
 # Eval Report
 
 **Status**: PASS  
-**Wall time**: 2744 ms  
+**Wall time**: 2760 ms  
 **Platform**: nt
 
 ## Test suite
@@ -11,7 +11,7 @@
 
 ## Raw JSON validation
 
-- 18 files, 18 parseable, 18 schema-correct
+- 22 files, 22 parseable, 22 schema-correct
 
 ## Aggregate scoring
 
