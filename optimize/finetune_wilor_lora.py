@@ -117,16 +117,24 @@ def main() -> None:
     from models.wilor_wrapper import WiLoRHandModel
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=2)
+    ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--val-frac", type=float, default=0.2)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--rank", type=int, default=8)
     ap.add_argument("--batch", type=int, default=2)
     ap.add_argument("--n-train", type=int, default=400)
+    ap.add_argument("--patience", type=int, default=3,
+                    help="early-stop after this many epochs without val improvement")
+    ap.add_argument("--lr-patience", type=int, default=2,
+                    help="ReduceLROnPlateau patience (epochs)")
+    ap.add_argument("--lr-factor", type=float, default=0.5)
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[finetune] device={device}")
+    def emit(s):
+        print(s, flush=True)
+
+    emit(f"[finetune] device={device}")
 
     # Load WiLoR default (fp32) with the real asset path.
     model = WiLoRHandModel(variant="default")
@@ -173,14 +181,24 @@ def main() -> None:
     print(f"\n[finetune] BEFORE (val {val_imgs.shape[0]} imgs) MPJPE = {before:.3f} mm")
     vram0 = torch.cuda.max_memory_allocated() / 1e6
 
-    # Optimizer only over LoRA adapters.
+    # Optimizer only over LoRA adapters; ReduceLROnPlateau on val MPJPE.
     opt = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=1e-4)
+    sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        opt, mode="min", factor=args.lr_factor, patience=args.lr_patience)
     loss_fn = nn.L1Loss(reduction="mean")
 
     model.model.train()
     n_tr = train_imgs.shape[0]
     best = before
+    best_epoch = -1
+    best_state = {k: v.detach().clone() for k, v in net.state_dict().items()}
+    val_hist = []
+    epochs_run = 0
+    no_improve = 0
+    import json
+
     for ep in range(args.epochs):
+        epochs_run += 1
         perm = torch.randperm(n_tr)
         tot = 0.0; nbatch = 0
         for s in range(0, n_tr, args.batch):
@@ -190,43 +208,63 @@ def main() -> None:
             opt.zero_grad(set_to_none=True)
             out = model.model({"img": x})
             pred = wrist_anchor(out["pred_keypoints_3d"][..., :3])
-            loss = loss_fn(pred, y)
+            loss = loss_fn(pred.float(), y.float())
             loss.backward()
             opt.step()
             tot += loss.item(); nbatch += 1
         avg = tot / max(1, nbatch)
         val = eval_mpjpe(model.model, val_imgs, val_gt, device)
-        print(f"[finetune] epoch {ep}: train loss={avg:.5f} | val MPJPE={val:.3f} mm"
-              f" (before {before:.3f})")
-        if val < best:
+        sched.step(val)
+        val_hist.append(round(float(val), 4))
+        lr = opt.param_groups[0]["lr"]
+        print(f"[finetune] epoch {ep}: train loss={avg:.5f} | "
+              f"val MPJPE={val:.3f} mm | lr={lr:.1e}")
+        if val < best - 1e-6:
             best = val
+            best_state = {k: v.detach().clone()
+                          for k, v in net.state_dict().items()}
+            no_improve = 0
+            best_epoch = ep
+        else:
+            no_improve += 1
+            if no_improve >= args.patience:
+                print(f"[finetune] early stop at epoch {ep} "
+                      f"(best {best:.3f} at ep {best_epoch})")
+                break
         model.model.train()
+
+    # Restore best state so the persisted adapter = best val-checkpoint.
+    net.load_state_dict(best_state)
+    best = eval_mpjpe(model.model, val_imgs, val_gt, device)
 
     vram_peak = torch.cuda.max_memory_allocated() / 1e6
     print(f"\n[finetune] RESULT: before={before:.3f}mm after={best:.3f}mm "
           f"(-{(before-best)/before*100:.1f}%)")
-    print(f"[finetune] VRAM peak during eval+crops: {vram0:.1f} MB; training peak: "
-          f"{vram_peak:.1f} MB")
+    print(f"[finetune] epochs_run={epochs_run} | VRAM peak (train)={vram_peak:.1f} MB")
 
-    # Persist the LoRA adapter so it can be merged back at inference.
+    # Persist the BEST LoRA adapter so it can be merged back at inference.
     out_dir = ROOT / "results" / "finetuned"
     out_dir.mkdir(parents=True, exist_ok=True)
-    net.save_pretrained(str(out_dir / f"wilor-lora-r{args.rank}"))
-    np.save(out_dir / "scores.npy",
+    net.save_pretrained(str(out_dir / f"wilor-lora-r{args.rank}-es"))
+    np.save(out_dir / "scores-es.npy",
             np.array([before, best]))
-    print(f"[finetune] saved adapter -> {out_dir / f'wilor-lora-r{args.rank}'}")
-    print(f"[finetune] scores (before, after) mm -> {out_dir / 'scores.npy'}")
+    print(f"[finetune] saved best adapter -> "
+          f"{out_dir / f'wilor-lora-r{args.rank}-es'}")
 
-    import json
     report = {"before_mpjpe_mm": round(float(before), 4),
               "after_mpjpe_mm": round(float(best), 4),
               "improvement_pct": round(float((before - best) / before * 100), 2),
+              "epochs_run": int(epochs_run),
+              "patience": args.patience,
+              "best_epoch": int(best_epoch),
+              "val_history_mm": val_hist,
               "train_imgs": int(n_tr), "val_imgs": int(val_imgs.shape[0]),
-              "epochs": args.epochs, "rank": args.rank, "lr": args.lr,
+              "rank": args.rank, "lr": args.lr,
               "vram_peak_mb": round(float(vram_peak), 1)}
     (ROOT / "results" / "raw" / "finetune-lora.json").write_text(
         json.dumps(report, indent=2))
-    print(f"[finetune] report -> results/raw/finetune-lora.json")
+    print(f"[finetune] report (with hist + early-stop) -> "
+          f"results/raw/finetune-lora.json")
 
 
 if __name__ == "__main__":

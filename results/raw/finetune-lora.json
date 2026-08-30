@@ -1,11 +1,20 @@
 {
-  "before_mpjpe_mm": 10.8169,
-  "after_mpjpe_mm": 9.4096,
-  "improvement_pct": 13.01,
-  "train_imgs": 480,
-  "val_imgs": 120,
-  "epochs": 2,
+  "before_mpjpe_mm": 10.3366,
+  "after_mpjpe_mm": 9.6126,
+  "improvement_pct": 7.0,
+  "epochs_run": 5,
+  "patience": 2,
+  "best_epoch": 2,
+  "val_history_mm": [
+    10.1414,
+    9.8691,
+    9.6186,
+    9.9137,
+    9.8687
+  ],
+  "train_imgs": 77,
+  "val_imgs": 19,
   "rank": 8,
   "lr": 0.0001,
-  "vram_peak_mb": 5318.8
+  "vram_peak_mb": 8164.3
 }

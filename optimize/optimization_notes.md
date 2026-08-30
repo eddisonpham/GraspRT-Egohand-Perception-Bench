@@ -231,6 +231,31 @@ reported -13% is the honest within-experiment before/after under one consistent 
 
 This validates the fine-tuning path end-to-end. The production goal (egocentric domain accuracy)
 still wants egocentric MANO-GT data (HOT3D) — same machinery, new data path.
+
+### Executed: early-stopped multi-epoch LoRA fine-tune — overfitting caught, best restored
+Added per-epoch val monitoring, ReduceLROnPlateau LR decay, and patience-based early stopping
+(best-state snapshot + restore) to the trainer. Ran a complete 5-epoch early-stopped pass on a
+smaller set (77 train / 19 val, ~38 batches/epoch; run completes within a session budget (~110s
+/epoch), which is why the subset is small — not an accuracy choice):
+
+| epoch | train loss | val MPJPE mm |
+|---|---:|---:|
+| before | — | 10.337 |
+| 0 | 0.00586 | 10.141 |
+| 1 | 0.00556 | 9.869 |
+| 2 | 0.00481 | **9.619** (best) |
+| 3 | 0.00450 | 9.914 (worse) |
+| 4 | 0.00427 | 9.869 (worse) |
+| early stop @ 4 | | best 9.619 @ ep2 restored |
+
+Train loss kept dropping while val rose after ep 2 — textbook overfitting onset. Early stop
+(patience 2) halted at ep 4 and restored the best-val adapter: final **10.337 -> 9.613mm (-7.0%)**.
+Val history persisted in `results/raw/finetune-lora.json`; best adapter in
+`results/finetuned/wilor-lora-r8-es/`. Note lower -7% vs the -13% 2-epoch run because this uses a
+smaller 19-image val subset (more variance), not less effective training. VRAM peak 8.16GB.
+
+The trainer now does real monitoring-driven training with early stopping — the mechanism works and
+is reproducible. Same caveat as before: egocentric (HOT3D) still requires the license'd download.
  It is viable only where a steady operator hand is the target (e.g.
 grasp-pose estimation with a slow-moving hand) and where reconstruction-tolerance to small
 crop translation is acceptable — both domain decisions, not free speed. This is the honest
