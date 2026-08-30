@@ -1,0 +1,31 @@
+# ── Core (verified on RTX 5060 Laptop, sm_120, CUDA 12.8) ──────────────
+# PyTorch is installed separately with the cu128 index URL — see README.
+numpy<2.3
+opencv-python>=4.10
+matplotlib>=3.8
+
+# ── ONNX / TensorRT optimization ─────────────────────────────────────
+onnx>=1.16
+onnxruntime-gpu==1.23.2
+# TensorRT 10.16 cu12 (matches the cu128 nvidia runtime libs; TRT 11.x is a
+# CUDA-13 build and fails with cudaError 35 on a 12.x driver).
+tensorrt-cu12==10.16.1.11
+
+# ── Model integration (WiLoR) ─────────────────────────────────────────
+ultralytics>=8.3
+pytorch-lightning>=2.2
+yacs>=0.1.10
+timm>=1.0
+smplx>=0.1.28
+pyrender>=0.2.2
+trimesh>=4.0
+scikit-image>=0.24
+# chumpy needs a numpy>=2 patch at import time (see README "Known issues").
+chumpy>=0.7
+
+# ── MediaPipe (Windows/native) ──────────────────────────────────────
+mediapipe>=0.10.18
+
+# ── Dev / test ────────────────────────────────────────────────────────
+pytest>=8.0
+pytest-cov>=5.0

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "egohand-bench"
+version = "1.0.0"
+description = "Controlled benchmark + TensorRT optimization of hand pose/mesh models on a 7GB-VRAM laptop GPU"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "EgoHand-Bench contributors" }]
+keywords = ["hand-pose", "mano", "wilor", "tensorrt", "benchmark", "freihand"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/<your-org>/egohand-bench"
+Issues = "https://github.com/<your-org>/egohand-bench/issues"
+
+# No packaged code — this is a research repo, not a library.
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::FutureWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.per-file-ignores]
+"agents/*" = ["E", "F"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]

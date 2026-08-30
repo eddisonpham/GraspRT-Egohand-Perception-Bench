@@ -1,0 +1,104 @@
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Conda / mamba env metadata inside the repo (should live outside)
+.conda/
+
+# ── Testing / coverage ─────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+cache/
+
+# ── Datasets (multi-GB, license-restricted, never commit) ─────
+# FreiHAND raw archives + extracted eval images
+data/freihand/*.zip
+data/freihand/evaluation/
+data/freihand/windows_eval/
+data/freihand/windows_dev/
+data/freihand/wget-log*
+# Real egocentric recordings if added later
+data/egocentric_clips/*.mp4
+data/egocentric_clips/*.MOV
+data/egocentric_clips/*.mov
+
+# ── Model weights / assets (license-restricted) ───────────────
+# MANO model files (manual registration required)
+models/assets/mano/
+models/assets/*.pkl
+# MediaPipe task asset is redistributable under its license but large; keep path only
+models/assets/*.task
+
+# Third-party research repos cloned for integration
+third_party/
+
+# ── Optimization artifacts (multi-GB binaries) ────────────────
+results/onnx/
+results/trt/
+*.onnx
+*.plan
+*.engine
+*.cache
+# External-data files produced alongside ONNX exports
+Constant_*_attr__value
+
+# ── Plots / qualitative outputs (regenerable) ─────────────────
+results/plots/*.png
+results/qualitative/*.png
+results/qualitative/*.mp4
+
+# ── Jupyter ────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── IDE / OS ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ────────────────────────────────────────────────────────
+*.log
+logs/
+wandb/
+mlruns/
