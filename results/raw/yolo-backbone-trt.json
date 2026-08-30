@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-08-30T17:41:01.025761+00:00",
+  "engine": "/mnt/c/Users/phamt/Projects/egohand-bench-optimize/results/trt/yolo-backbone-fp16.engine",
+  "latency_mean_ms": 7.34,
+  "latency_p95_ms": 11.182,
+  "mean_max_box_diff_px": 179.791,
+  "n_pairs": 30
+}
