@@ -1,3 +1,6 @@
+# ── Project runbook (development notes, not shipped) ─────────────
+agents/
+
 # ── Python ──────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

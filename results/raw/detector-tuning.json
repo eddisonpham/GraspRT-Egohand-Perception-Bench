@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-08-30T15:21:05.073222+00:00",
+  "n_images": 30,
+  "iters": 40,
+  "results": [
+    {
+      "config": "baseline-fp32",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8804,
+      "mean_ms": 14.56,
+      "p95_ms": 17.62,
+      "n": 30
+    },
+    {
+      "config": "fp16",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8804,
+      "mean_ms": 14.73,
+      "p95_ms": 20.39,
+      "n": 30
+    },
+    {
+      "config": "imgsz512",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8804,
+      "mean_ms": 13.85,
+      "p95_ms": 16.15,
+      "n": 30
+    },
+    {
+      "config": "imgsz448",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8753,
+      "mean_ms": 15.48,
+      "p95_ms": 17.86,
+      "n": 30
+    },
+    {
+      "config": "imgsz384",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8744,
+      "mean_ms": 13.95,
+      "p95_ms": 16.77,
+      "n": 30
+    },
+    {
+      "config": "fp16+imgsz512",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8804,
+      "mean_ms": 14.58,
+      "p95_ms": 17.33,
+      "n": 30
+    },
+    {
+      "config": "fp16+imgsz448",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8753,
+      "mean_ms": 15.45,
+      "p95_ms": 19.22,
+      "n": 30
+    },
+    {
+      "config": "fp16+imgsz384",
+      "detection_rate": 1.0,
+      "avg_max_conf": 0.8744,
+      "mean_ms": 15.07,
+      "p95_ms": 18.8,
+      "n": 30
+    }
+  ]
+}

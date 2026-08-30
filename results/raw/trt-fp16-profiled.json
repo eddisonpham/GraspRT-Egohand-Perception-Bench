@@ -1,0 +1,41 @@
+{
+  "model": "wilor-fast",
+  "variant": "fast",
+  "backend": "tensorrt-fp16",
+  "timestamp": "2026-08-30T15:42:12.166622+00:00",
+  "engine": "results/trt/wilor-fast-fp16.plan",
+  "latency_ms": {
+    "mean_ms": 12.596,
+    "median_ms": 12.499,
+    "p95_ms": 15.204,
+    "p99_ms": 15.743,
+    "std_ms": 1.634,
+    "fps": 79.39,
+    "n": 200
+  },
+  "resource": {
+    "n_samples": 23,
+    "gpu_util_pct_peak": 88.0,
+    "gpu_util_pct_mean": 84.391,
+    "load_1m_peak": 0.488,
+    "load_1m_mean": 0.482,
+    "load_5m_peak": 0.127,
+    "load_5m_mean": 0.125,
+    "mem_used_mb_peak": 4574.0,
+    "mem_used_mb_mean": 4574.0,
+    "power_watts_peak": 85.84,
+    "power_watts_mean": 79.625,
+    "process_rss_mb_peak": 3162.3,
+    "process_rss_mb_mean": 3162.3,
+    "temp_c_peak": 68.0,
+    "temp_c_mean": 66.913
+  },
+  "vram_mb": {
+    "torch_peak_mb": 1398.3
+  },
+  "protocol": {
+    "warmup": 20,
+    "iters": 200,
+    "n_images": 50
+  }
+}

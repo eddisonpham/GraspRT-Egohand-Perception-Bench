@@ -84,6 +84,112 @@ def nvidia_smi_used_mb() -> float:
     return float(out.stdout.strip().splitlines()[0])
 
 
+def nvidia_smi_snapshot() -> dict:
+    """One driver-level sample of GPU utilization, memory, power, and temperature.
+
+    Returns {} when nvidia-smi is unavailable (non-NVIDIA host) so callers can
+    treat production metrics as optional rather than hard-failing.
+    """
+    try:
+        out = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=utilization.gpu,memory.used,power.draw,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+        parts = [p.strip() for p in out.stdout.strip().splitlines()[0].split(",")]
+        if len(parts) < 4:
+            return {}
+        def _num(s: str) -> float:
+            try:
+                return float(s.replace("[N/A]", "0").replace("N/A", "0"))
+            except ValueError:
+                return 0.0
+        return {
+            "gpu_util_pct": _num(parts[0]),
+            "mem_used_mb": _num(parts[1]),
+            "power_watts": _num(parts[2]),
+            "temp_c": _num(parts[3]),
+        }
+    except Exception:
+        return {}
+
+
+def cpu_load_sample() -> dict:
+    """Host CPU load + process RSS snapshot (cross-platform best-effort).
+
+    Uses os.getloadavg (POSIX) and /proc/self/status VmRSS (Linux). On hosts
+    without either, returns whatever is available — never raises.
+    """
+    snap: dict = {}
+    try:
+        import os
+        if hasattr(os, "getloadavg"):
+            la = os.getloadavg()
+            snap["load_1m"] = round(float(la[0]), 3)
+            snap["load_5m"] = round(float(la[1]), 3)
+    except Exception:
+        pass
+    try:
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    snap["process_rss_mb"] = round(float(line.split()[1]) / 1024.0, 1)
+                    break
+    except Exception:
+        pass
+    return snap
+
+
+class ResourceMonitor(threading.Thread):
+    """Background production-profiling thread: GPU + CPU + power samples.
+
+    Extends NvidiaSmiMonitor with utilization/power/temperature and host CPU
+    load, all sampled every `interval_s`. `peak` keeps the max per metric and
+    `samples` keeps the full time series for after-run analysis.
+
+    Usage:
+        mon = ResourceMonitor()
+        mon.start()
+        ... workload ...
+        mon.stop()
+        mon.peak  # {"gpu_util_pct": ..., "power_watts": ..., ...}
+    """
+
+    def __init__(self, interval_s: float = 0.05):
+        super().__init__(daemon=True)
+        self.interval_s = interval_s
+        self.samples: list[dict] = []
+        self.peak: dict[str, float] = {}
+        self._stop_event = threading.Event()
+
+    def run(self):
+        while not self._stop_event.is_set():
+            snap = {**nvidia_smi_snapshot(), **cpu_load_sample()}
+            if snap:
+                self.samples.append(snap)
+                for k, v in snap.items():
+                    self.peak[k] = max(self.peak.get(k, 0.0), v)
+            self._stop_event.wait(self.interval_s)
+
+    def stop(self):
+        self._stop_event.set()
+        self.join(timeout=2.0)
+
+    def summary(self) -> dict:
+        """Peak + mean per metric over the sampled window."""
+        if not self.samples:
+            return {"n_samples": 0}
+        keys = set().union(*(s.keys() for s in self.samples))
+        out: dict = {"n_samples": len(self.samples)}
+        for k in sorted(keys):
+            vals = [s[k] for s in self.samples if k in s]
+            if vals:
+                out[f"{k}_peak"] = round(max(vals), 3)
+                out[f"{k}_mean"] = round(sum(vals) / len(vals), 3)
+        return out
+
+
 class NvidiaSmiMonitor(threading.Thread):
     """Background thread polling nvidia-smi memory.used every `interval_s` seconds.
 
