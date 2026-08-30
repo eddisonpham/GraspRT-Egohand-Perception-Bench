@@ -1,0 +1,46 @@
+{
+  "clips": [
+    "data/egocentric_clips/clip_01_synthetic.mp4",
+    "data/egocentric_clips/clip_02_synthetic.mp4"
+  ],
+  "stability": {
+    "n_frames": 300,
+    "n_detected": 298,
+    "skipped_no_det": 2,
+    "center_dx_px_median": 4.073020935058594,
+    "center_dy_px_median": 3.8537445068359375,
+    "center_dx_px_p95": 15.084912300109863,
+    "center_dy_px_p95": 13.138638496398926,
+    "center_dx_px_max": 53.441162109375,
+    "center_dy_px_max": 77.38018035888672,
+    "size_dx_px_median": 17.077682495117188,
+    "size_dy_px_median": 19.379135131835938
+  },
+  "cadence_fps": {
+    "1": {
+      "fps": 28.38,
+      "mean_ms": 35.232,
+      "p95_ms": 41.58
+    },
+    "2": {
+      "fps": 38.69,
+      "mean_ms": 25.846,
+      "p95_ms": 36.153
+    },
+    "3": {
+      "fps": 41.1,
+      "mean_ms": 24.333,
+      "p95_ms": 36.829
+    },
+    "4": {
+      "fps": 43.87,
+      "mean_ms": 22.796,
+      "p95_ms": 36.96
+    },
+    "6": {
+      "fps": 44.46,
+      "mean_ms": 22.492,
+      "p95_ms": 37.67
+    }
+  }
+}

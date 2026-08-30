@@ -124,3 +124,33 @@ negatives.
 **Verdict**: rejected; the serialized path remains (simpler, no downside). The e2e wall is GPU
 SM throughput, now confirmed three independent ways (compile, stream overlap, multi-stream),
 and no scheduling rearrangement recovers it.
+
+## Detection cadence (box reuse every K frames) — the one real lever, a trade (2026-08-30)
+
+The GPU-SM wall blocks per-frame detector acceleration, but in *video* the detector need not run
+every frame. Detection cadence (detect every K-th frame, reuse the box for the (K-1)
+intermediates) amortizes the 13.8ms detector forward without touching reconstruct compute. This
+is the only lever that bypasses the wall. Measured on 300 real synthetic ego frames (15fps
+224x224 clips), TRT FP16 recon per frame, serialized pipeline:
+
+| Cadence K | FPS | mean ms | p95 ms | vs K=1 |
+|---|---:|---:|---:|---:|
+| 1 (baseline) | 28.4 | 35.23 | 41.58 | 1.00x |
+| 2 | 38.7 | 25.85 | 36.15 | 1.36x |
+| 3 | 41.1 | 24.33 | 36.83 | 1.45x |
+| 4 | 43.9 | 22.80 | 36.96 | 1.55x |
+| 6 | 44.5 | 22.49 | 37.67 | 1.57x |
+
+Cadence clearly breaks the 30 FPS wall (K=2 already 38.7 FPS). **But it is a trade, not a free
+win**: the synthetic-clip box-stability analysis shows consecutive-frame box center moves by a
+median of **4.0px / p95 15px / max 53-77px**, and box *size* by 17-19px per frame. The boundary case is decisive: a
+**4.85px box shift collapsed PA-MPJPE 5.65 -> 21.4mm** in the TRT detector experiment. Stale-box crops at K>=2 carry multi-pixel drift on moving hands, so
+reconstruction accuracy will degrade in exactly the regime that proved hypersensitive.
+
+**Verdict**: cadence is the only lever that reaches >30 FPS, but it trades per-frame recon
+accuracy on moving hands. It is viable only where a steady operator hand is the target (e.g.
+grasp-pose estimation with a slow-moving hand) and where reconstruction-tolerance to small
+crop translation is acceptable — both domain decisions, not free speed. This is the honest
+boundary: the pipeline is GPU-SM-bound for *every-frame* accuracy; cadence relaxes accuracy
+assumptions to buy FPS. Recorded as the definitive answer to "is >30 FPS possible": yes, at a
+stated accuracy tradeoff.
