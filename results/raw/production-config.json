@@ -1,0 +1,12 @@
+{
+  "base_mpjpe_mm": 10.3366,
+  "merged_mpjpe_mm": 9.6097,
+  "mpjpe_delta_pct": 7.03,
+  "cadence": 2,
+  "fps_k1": 10.87,
+  "mean_ms_k1": 92.003,
+  "fps_k2": 12.36,
+  "mean_ms_k2": 80.922,
+  "speedup_x": 1.137,
+  "val_imgs": 19
+}

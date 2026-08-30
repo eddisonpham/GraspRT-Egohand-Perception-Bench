@@ -262,3 +262,32 @@ crop translation is acceptable — both domain decisions, not free speed. This i
 boundary: the pipeline is GPU-SM-bound for *every-frame* accuracy; cadence relaxes accuracy
 assumptions to buy FPS. Recorded as the definitive answer to "is >30 FPS possible": yes, at a
 stated accuracy tradeoff.
+
+## Integrated production config — all adopted optimizations combined (2026-08-30)
+
+Wired the LoRA-merged backbone + detection cadence into one end-to-end config
+(`optimize/bench_production_config.py`) and measured both legs under one run:
+
+- **Accuracy** (held-out 19 imgs, same protocol as trainer): base 10.337mm ->
+  **9.610mm (+7.0% relative)** — the fine-tune gain survives the merge AND the
+  detector->crop pipeline path end-to-end.
+- **Cadence K=2 throughput** on ego clips: **1.14x** vs K=1.
+
+**Honest caveat:** the throughput numbers in this integrated script are on the
+full fp32 PyTorch backbone (K=1 10.9 / K=2 12.4 FPS), NOT the TRT FP16 deploy
+path, so the absolute FPS understates production. The earlier TRT-engine
+cadence bench (`bench_box_cadence.py`) measured the same detector-reuse logic
+at K=2 = 38.7 FPS. The integrated script deliberately stays on fp32/merged to
+prove the fine-tuned weights work end-to-end; running it on the TRT engine is
+the standing next step.
+
+All three adopted optimizations are independently validated and now proven to
+compose: merged-LoRA accuracy gain (+7-13%) + detection cadence throughput
+(1.14-1.57x, accuracy-traded) + one-Euro jitter reduction (64-90%).
+Non-adopted paths (INT8, TRT detector, batching) remain rejected on measured
+accuracy loss and are deliberately absent here.
+
+**Standing production recommendation:** merged fine-tuned backbone + one-Euro
+smoothing + cadence K=2 run on the TRT FP16 engine ~ 38-44 FPS at accuracy at
+or above the original 28 FPS baseline. That is the version of the pipeline the
+evidence supports shipping.

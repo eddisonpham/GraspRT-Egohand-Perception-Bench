@@ -158,6 +158,11 @@ python optimize/bench_detector.py         # detector FP16/imgsz — no gain (neu
 python optimize/bench_batch_throughput.py # multi-stream — GPU saturated at batch=1
 python optimize/bench_breakdown.py        # per-stage latency
 python scripts/smoke_test_egocentric.py   # synthetic clips, behavior invariants
+
+# Fine-tune (LoRA) + deploy
+python optimize/finetune_wilor_lora.py --epochs 5 --n-train 300 --patience 3
+python optimize/merge_wilor_lora.py      # fold adapter → backbone, verify gain
+python optimize/bench_production_config.py  # integrated adopted-optimizations config
 ```
 
 ### Tests
