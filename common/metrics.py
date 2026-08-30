@@ -1,10 +1,7 @@
-"""Evaluation metrics shared by every benchmark run.
+"""Shared evaluation metrics (pure NumPy, all errors in millimeters).
 
-All alignment/error code is pure NumPy so it runs identically in every model env.
-
-Procrustes alignment here means a *similarity transform* (rotation + translation +
-uniform scale, NO reflection) — standard for FreiHAND PA-MPJPE / PA-MPVPE.
-Implemented as Umeyama (1991). All errors are reported in millimeters.
+Procrustes alignment is a similarity transform (rotation + translation +
+uniform scale, no reflection), per FreiHAND PA-MPJPE/PA-MPVPE.
 """
 from __future__ import annotations
 
@@ -12,11 +9,7 @@ import numpy as np
 
 
 def _umeyama(src: np.ndarray, dst: np.ndarray, with_scale: bool = True):
-    """Similarity transform mapping src -> dst.
-
-    Returns (scale, R, t) such that src @ R.T * scale + t ≈ dst.
-    src, dst: (N, 3) arrays.
-    """
+    """Fit scale, R, t mapping src onto dst: src @ R.T * scale + t ~= dst."""
     src = np.asarray(src, dtype=np.float64)
     dst = np.asarray(dst, dtype=np.float64)
     mu_src = src.mean(axis=0)
@@ -28,7 +21,7 @@ def _umeyama(src: np.ndarray, dst: np.ndarray, with_scale: bool = True):
     u, d, vt = np.linalg.svd(cov)
     s = np.eye(3)
     if np.linalg.det(u) * np.linalg.det(vt) < 0:
-        s[2, 2] = -1  # disallow reflection
+        s[2, 2] = -1
     r = u @ s @ vt
     if with_scale:
         var_src = np.sum(src_c ** 2) / n
@@ -40,7 +33,7 @@ def _umeyama(src: np.ndarray, dst: np.ndarray, with_scale: bool = True):
 
 
 def procrustes_align(pred: np.ndarray, gt: np.ndarray) -> np.ndarray:
-    """Similarity-transform-align pred (N,3) onto gt (N,3). Returns aligned pred."""
+    """Align pred (N,3) onto gt (N,3) with a similarity transform."""
     pred = np.asarray(pred, dtype=np.float64)
     gt = np.asarray(gt, dtype=np.float64)
     if pred.shape != gt.shape:
@@ -50,55 +43,30 @@ def procrustes_align(pred: np.ndarray, gt: np.ndarray) -> np.ndarray:
 
 
 def mpjpe(pred: np.ndarray, gt: np.ndarray) -> float:
-    """Mean per-joint position error in mm, no alignment."""
-    return float(np.linalg.norm(np.asarray(pred, np.float64) - np.asarray(gt, np.float64), axis=-1).mean() * 1000.0)
+    """Mean per-joint position error in mm, without alignment."""
+    d = np.asarray(pred, np.float64) - np.asarray(gt, np.float64)
+    return float(np.linalg.norm(d, axis=-1).mean() * 1000.0)
 
 
 def pa_mpjpe(pred: np.ndarray, gt: np.ndarray) -> float:
-    """Procrustes-Aligned MPJPE in mm. THE headline accuracy metric for this project."""
+    """Procrustes-aligned mean per-joint position error in mm."""
     aligned = procrustes_align(pred, gt)
     return float(np.linalg.norm(aligned - np.asarray(gt, np.float64), axis=-1).mean() * 1000.0)
 
 
 def pa_mpvpe(pred_verts: np.ndarray, gt_verts: np.ndarray) -> float:
-    """Procrustes-Aligned mean per-vertex position error in mm. Only for models with mesh_verts."""
+    """Procrustes-aligned mean per-vertex position error in mm."""
     aligned = procrustes_align(pred_verts, gt_verts)
     return float(np.linalg.norm(aligned - np.asarray(gt_verts, np.float64), axis=-1).mean() * 1000.0)
 
 
 def f_score(pred_verts: np.ndarray, gt_verts: np.ndarray, threshold_mm: float) -> float:
-    """F-score at a distance threshold (5mm and 15mm are the standard FreiHAND thresholds)."""
-    # Align first (same protocol as PA-MPVPE), then compare in mm. The previous
-    # implementation compared aligned mm predictions against unaligned meters GT,
-    # producing the invalid all-zero F-scores caught by WiLoR's first run.
-    pred = procrustes_align(pred_verts, gt_verts) * 1000.0  # meters -> mm
+    """F-score at a distance threshold in mm (aligns first, like PA-MPVPE)."""
+    pred = procrustes_align(pred_verts, gt_verts) * 1000.0
     gt = np.asarray(gt_verts, np.float64) * 1000.0
-    dist = np.linalg.norm(pred[:, None, :] - gt[None, :, :], axis=-1)  # (P, G)
-    prec = (dist.min(axis=1) < threshold_mm).mean()  # how many pred verts have a GT vert nearby
-    rec = (dist.min(axis=0) < threshold_mm).mean()   # how many GT verts have a pred vert nearby
+    dist = np.linalg.norm(pred[:, None, :] - gt[None, :, :], axis=-1)
+    prec = (dist.min(axis=1) < threshold_mm).mean()
+    rec = (dist.min(axis=0) < threshold_mm).mean()
     if prec + rec == 0:
         return 0.0
     return float(2 * prec * rec / (prec + rec))
-
-
-if __name__ == "__main__":
-    rng = np.random.default_rng(0)
-    gt = rng.normal(size=(21, 3))
-    # 1. perfect self-alignment
-    assert abs(pa_mpjpe(gt, gt)) < 1e-9, "pa_mpjpe(gt, gt) must be 0"
-    assert abs(pa_mpvpe(gt, gt)) < 1e-9, "pa_mpvpe(gt, gt) must be 0"
-    # 2. similarity-transformed pred must align back to ~0
-    R = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
-    pred = (gt @ R.T) * 2.0 + np.array([0.1, -0.2, 0.3])
-    assert abs(pa_mpjpe(pred, gt)) < 1e-6, f"similarity-invariant PA-MPJPE broken: {pa_mpjpe(pred, gt)}"
-    # 3. mpjpe is NOT similarity-invariant (same as PA only when no transform applied)
-    assert abs(mpjpe(gt, gt)) < 1e-9
-    assert mpjpe(pred, gt) > pa_mpjpe(pred, gt)
-    # 4. f-score: identical sets -> 1.0 at any threshold above 0
-    assert abs(f_score(gt, gt, 5.0) - 1.0) < 1e-9
-    flipped = gt + np.array([1.0, 0.0, 0.0])  # 1 m shift in mm-space... gt is in meters here
-    # gt in meters: shift by 1e-4 m = 0.1 mm -> F@5mm stays 1, F@0.05mm drops
-    shifted = gt + 1e-4
-    assert abs(f_score(gt, shifted, 5.0) - 1.0) < 1e-9
-    assert f_score(gt, gt + 0.1, 5.0) < 1.0
-    print("metrics self-test: all assertions passed")

@@ -1,17 +1,13 @@
-"""Latency + VRAM profiling utilities.
+"""Shared latency and resource profiling.
 
-Design intent (stage 06): every benchmark run, across every model and every backend
-(PyTorch, ONNX Runtime, TensorRT), must use the SAME warmup/timing protocol so rows in
-the final tables are comparable. This module is the single implementation of that protocol.
-
-- GPU-side latency: CUDA events (host dispatch overhead excluded); CPU-only models
-  (MediaPipe) use time.perf_counter().
-- VRAM: torch allocator peak + nvidia-smi poll (driver-level truth, includes context
-  overhead and anything outside PyTorch's allocator).
+One timing protocol across every backend (PyTorch / ONNX Runtime / TensorRT)
+so benchmark rows are comparable. GPU latency uses CUDA events; CPU models use
+perf_counter. VRAM is tracked via torch allocator + nvidia-smi.
 """
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import threading
 import time
@@ -20,7 +16,7 @@ from typing import Optional
 import numpy as np
 
 
-def _cuda_available():
+def _cuda_available() -> bool:
     try:
         import torch
         return torch.cuda.is_available()
@@ -30,15 +26,10 @@ def _cuda_available():
 
 def time_infer(model, batch, n_warmup: int = 20, n_iters: int = 200,
                use_cuda_events: Optional[bool] = None) -> dict:
-    """Time model.infer(batch) using the project's standard protocol.
-
-    Returns {"mean_ms","median_ms","p95_ms","std_ms"}. Warmup happens first and is
-    excluded from all numbers.
-    """
+    """Time model.infer(batch); returns mean/median/p95/std ms (warmup excluded)."""
     if use_cuda_events is None:
         use_cuda_events = (getattr(model, "device", "cpu") != "cpu") and _cuda_available()
 
-    # warmup — excluded from timing
     for _ in range(max(1, n_warmup)):
         model.infer(batch)
 
@@ -47,7 +38,8 @@ def time_infer(model, batch, n_warmup: int = 20, n_iters: int = 200,
         torch.cuda.synchronize()
         lat = []
         for _ in range(n_iters):
-            start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            start = torch.cuda.Event(enable_timing=True)
+            end = torch.cuda.Event(enable_timing=True)
             start.record()
             model.infer(batch)
             end.record()
@@ -58,8 +50,7 @@ def time_infer(model, batch, n_warmup: int = 20, n_iters: int = 200,
         for _ in range(n_iters):
             t0 = time.perf_counter()
             model.infer(batch)
-            t1 = time.perf_counter()
-            lat.append((t1 - t0) * 1e3)
+            lat.append((time.perf_counter() - t0) * 1e3)
 
     arr = np.asarray(lat, dtype=np.float64)
     return {
@@ -71,33 +62,28 @@ def time_infer(model, batch, n_warmup: int = 20, n_iters: int = 200,
 
 
 def torch_peak_mb() -> float:
-    """Peak VRAM as reported by PyTorch's allocator (requires torch+cuda in env)."""
+    """Peak VRAM reported by PyTorch's allocator."""
     import torch
     return torch.cuda.max_memory_allocated() / 1e6
 
 
-def nvidia_smi_used_mb() -> float:
+def _smi_query(query: str) -> str:
     out = subprocess.run(
-        ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+        ["nvidia-smi", f"--query-gpu={query}", "--format=csv,noheader,nounits"],
         capture_output=True, text=True, timeout=10,
     )
-    return float(out.stdout.strip().splitlines()[0])
+    return out.stdout.strip()
+
+
+def nvidia_smi_used_mb() -> float:
+    return float(_smi_query("memory.used").splitlines()[0])
 
 
 def nvidia_smi_snapshot() -> dict:
-    """One driver-level sample of GPU utilization, memory, power, and temperature.
-
-    Returns {} when nvidia-smi is unavailable (non-NVIDIA host) so callers can
-    treat production metrics as optional rather than hard-failing.
-    """
+    """Sample GPU util/VRAM/power/temp. Returns {} if nvidia-smi is unavailable."""
     try:
-        out = subprocess.run(
-            ["nvidia-smi",
-             "--query-gpu=utilization.gpu,memory.used,power.draw,temperature.gpu",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=10,
-        )
-        parts = [p.strip() for p in out.stdout.strip().splitlines()[0].split(",")]
+        raw = _smi_query("utilization.gpu,memory.used,power.draw,temperature.gpu")
+        parts = [p.strip() for p in raw.splitlines()[0].split(",")]
         if len(parts) < 4:
             return {}
         def _num(s: str) -> float:
@@ -116,14 +102,9 @@ def nvidia_smi_snapshot() -> dict:
 
 
 def cpu_load_sample() -> dict:
-    """Host CPU load + process RSS snapshot (cross-platform best-effort).
-
-    Uses os.getloadavg (POSIX) and /proc/self/status VmRSS (Linux). On hosts
-    without either, returns whatever is available — never raises.
-    """
+    """Snapshot host load average + process RSS (best-effort, never raises)."""
     snap: dict = {}
     try:
-        import os
         if hasattr(os, "getloadavg"):
             la = os.getloadavg()
             snap["load_1m"] = round(float(la[0]), 3)
@@ -142,18 +123,9 @@ def cpu_load_sample() -> dict:
 
 
 class ResourceMonitor(threading.Thread):
-    """Background production-profiling thread: GPU + CPU + power samples.
+    """Background thread sampling GPU util/power/temp + CPU load every interval_s.
 
-    Extends NvidiaSmiMonitor with utilization/power/temperature and host CPU
-    load, all sampled every `interval_s`. `peak` keeps the max per metric and
-    `samples` keeps the full time series for after-run analysis.
-
-    Usage:
-        mon = ResourceMonitor()
-        mon.start()
-        ... workload ...
-        mon.stop()
-        mon.peak  # {"gpu_util_pct": ..., "power_watts": ..., ...}
+    mon.summary() returns per-metric peak and mean over the sampled window.
     """
 
     def __init__(self, interval_s: float = 0.05):
@@ -177,7 +149,7 @@ class ResourceMonitor(threading.Thread):
         self.join(timeout=2.0)
 
     def summary(self) -> dict:
-        """Peak + mean per metric over the sampled window."""
+        """Per-metric peak and mean over the sampled window."""
         if not self.samples:
             return {"n_samples": 0}
         keys = set().union(*(s.keys() for s in self.samples))
@@ -191,15 +163,7 @@ class ResourceMonitor(threading.Thread):
 
 
 class NvidiaSmiMonitor(threading.Thread):
-    """Background thread polling nvidia-smi memory.used every `interval_s` seconds.
-
-    Usage:
-        mon = NvidiaSmiMonitor()
-        mon.start()
-        ... run workload ...
-        mon.stop()
-        peak = mon.peak_mb
-    """
+    """Background thread polling nvidia-smi memory.used every interval_s."""
 
     def __init__(self, interval_s: float = 0.05):
         super().__init__(daemon=True)
@@ -224,7 +188,7 @@ class NvidiaSmiMonitor(threading.Thread):
 
 
 def measure_vram(model, batch, n_warmup: int = 20, n_iters: int = 200) -> dict:
-    """Measure torch-allocator peak AND nvidia-smi peak across a timed run."""
+    """Measure torch-allocator AND nvidia-smi peak across a timed run."""
     import torch
     torch.cuda.reset_peak_memory_stats()
     mon = NvidiaSmiMonitor()
@@ -241,11 +205,7 @@ def measure_vram(model, batch, n_warmup: int = 20, n_iters: int = 200) -> dict:
 
 
 def write_raw(model_name: str, variant: str, payload: dict, out_dir="results/raw") -> str:
-    """Write one results/raw/<model>.json in the stage-06 schema.
-
-    Accepts a payload dict; merges required key metadata. Keeps the schema in one place.
-    """
-    import os
+    """Write results/raw/<model_name>.json with the standard schema metadata."""
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"{model_name}.json")
     with open(path, "w") as f:
