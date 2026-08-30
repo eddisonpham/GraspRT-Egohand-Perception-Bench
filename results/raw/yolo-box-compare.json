@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-08-30T17:14:55.531981+00:00",
+  "n_images": 30,
+  "both_detected": 30,
+  "both_missed": 0,
+  "mean_max_box_diff_px": 4.852
+}

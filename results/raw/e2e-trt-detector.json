@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-08-30T17:12:01.979119+00:00",
+  "n_images": 100,
+  "torch_detector": {
+    "latency": {
+      "mean_ms": 50.755,
+      "p95_ms": 58.074
+    },
+    "pa_mpjpe_mm": 5.653,
+    "fps": 19.7
+  },
+  "trt_detector": {
+    "latency": {
+      "mean_ms": 25.784,
+      "p95_ms": 30.05
+    },
+    "pa_mpjpe_mm": 21.425,
+    "fps": 38.8,
+    "misses": 1
+  }
+}

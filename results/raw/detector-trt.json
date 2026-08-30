@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-08-30T17:14:19.297058+00:00",
+  "engine": "/mnt/c/Users/phamt/Projects/egohand-bench-optimize/results/trt/yolo-hand-fp32.engine",
+  "pytorch": {
+    "latency": {
+      "mean_ms": 15.05,
+      "p95_ms": 16.935
+    },
+    "detection_rate": 1.0,
+    "conf": 0.8802622377872467
+  },
+  "tensorrt": {
+    "latency": {
+      "mean_ms": 8.308,
+      "p95_ms": 10.655
+    },
+    "detection_rate": 1.0,
+    "conf": 230.0657928466797
+  }
+}

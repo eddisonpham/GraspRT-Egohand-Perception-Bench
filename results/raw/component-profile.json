@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-08-30T17:02:31.264412+00:00",
+  "n_images": 30,
+  "misses": 0,
+  "substeps": {
+    "yolo_call (forward+parse)": {
+      "mean_ms": 16.116,
+      "p95_ms": 19.632
+    },
+    "ds_build (ViTDetDataset args)": {
+      "mean_ms": -2.82,
+      "p95_ms": 1.673
+    },
+    "crop_index (crop+normalize)": {
+      "mean_ms": 6.776,
+      "p95_ms": 9.533
+    },
+    "preprocess total": {
+      "mean_ms": 13.296,
+      "p95_ms": 13.85
+    }
+  }
+}

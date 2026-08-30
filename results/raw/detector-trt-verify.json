@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-08-30T17:09:33.522400+00:00",
+  "n_images": 30,
+  "detection_rate_torch": 1.0,
+  "detection_rate_trt": 1.0,
+  "box_counts_match": true,
+  "bbox_in_bounds_torch": 30,
+  "bbox_in_bounds_trt": 30,
+  "torch_conf_max": 0.9129259586334229,
+  "trt_conf_max": 0.9140625,
+  "trt_conf_gt_1": 0
+}

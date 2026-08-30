@@ -29,3 +29,19 @@ crop preprocessing retained. It measured 33.51ms mean / 39.42ms p95 / 29.84 FPS 
 nvidia-smi peak / 5.901mm PA-MPJPE on 200 seeded FreiHAND eval images.
 
 TensorRT/INT8 are not claimed until an ONNX graph exists and passes numerical equivalence.
+
+## YOLO detector TensorRT export (2026-08-30) — REJECTED on accuracy
+
+The WiLoR YOLO hand detector (`detector.pt`, a YOLO-pose model) was exported to a TensorRT
+FP16 engine via ultralytics `.export(format='engine', half=True)`. It is ~2x faster than the
+native torch detector on the same 224x224 inputs (7.3ms vs 16.4ms, detection rate 1.000 both), 
+but the exported engine produces **box coordinates shifted by ~4.85px** vs the torch path.
+
+That box shift is not FP16-rounding (an FP32 engine shows the identical 4.85px shift); it is an
+artifact of the ONNX->TRT round-trip of the YOLO-pose box decoder / NMS. Errors propagate into
+ViTDetDataset crop coords, and end-to-end PA-MPJPE collapses from 5.65mm (torch detector) to
+21.43mm (TRT detector) on 100 dev images.
+
+Because the crop is hypersensitive to box position, the TRT detector is **not adopted** despite
+its latency win. Native torch detector remains the correct path. This is a measured honest
+negative result.
