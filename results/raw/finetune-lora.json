@@ -1,0 +1,11 @@
+{
+  "before_mpjpe_mm": 10.8169,
+  "after_mpjpe_mm": 9.4096,
+  "improvement_pct": 13.01,
+  "train_imgs": 480,
+  "val_imgs": 120,
+  "epochs": 2,
+  "rank": 8,
+  "lr": 0.0001,
+  "vram_peak_mb": 5318.8
+}

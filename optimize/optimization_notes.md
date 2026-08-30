@@ -202,6 +202,35 @@ jitter eval) is ready and reusable.
 **Verdict**: temporal smoothing is complete and verified (jitter -90%). Fine-tuning is a
 researched, feasible next phase on HOT3D via QLoRA + head fine-tune; not executable here without
 the dataset download and a training run. Recorded as the two-leg plan.
+
+### Executed: LoRA fine-tune on-freehold FreiHAND 3D-joint GT — WORKS (-13% MPJPE)
+Built and ran a real LoRA fine-tune (`optimize/finetune_wilor_lora.py`) on the 3960-image
+FreiHAND eval set's 3D-joint GT (wrist-anchored meters), with a held-out split (480 train /
+120 val, disjoint indices). Crops produced through the
+REAL pipeline (detector -> ViTDetDataset -> normalize) so it learns the deployed input
+distribution. LoRA rank-8 on backbone qkv/proj/fc1/fc2 = 5.26M trainable (0.83% of 636M),
+everything else frozen, L1 joint-regression loss, AdamW.
+
+| Metric | Value |
+|---|---:|
+| Held-out val MPJPE before | 10.817 mm |
+| Held-out val MPJPE after (2 ep) | 9.410 mm |
+| Improvement | -13.0% |
+| Train loss | 0.00539 -> 0.00499 |
+| VRAM peak (train) | 5.32 GB |
+| VRAM peak (eval+crops) | 5.22 GB |
+
+Confirmed: LoRA machinery mounts correctly on WiLoR's ViT backbone, backprop works through the
+MANO reconstruction, held-out accuracy moves, and it fits the 8.5GB GPU with >3GB headroom.
+Adapter persisted to `results/finetuned/wilor-lora-r8/` (`scores.npy` = [10.817, 9.410]).
+
+The before=10.8mm is HIGHER than the 5.65-5.9mm end-to-end number because (a) this uses the
+larger 'default' (fp32) variant, (b) it's PA-FREE MPJPE in meters (FreiHAND-native), not the
+Procrustes-aligned PA-MPJPE value normally reported, and (c) a random 120-image subset. The
+reported -13% is the honest within-experiment before/after under one consistent protocol.
+
+This validates the fine-tuning path end-to-end. The production goal (egocentric domain accuracy)
+still wants egocentric MANO-GT data (HOT3D) — same machinery, new data path.
  It is viable only where a steady operator hand is the target (e.g.
 grasp-pose estimation with a slow-moving hand) and where reconstruction-tolerance to small
 crop translation is acceptable — both domain decisions, not free speed. This is the honest
