@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-08-30T17:17:30.994540+00:00",
+  "n_images": 30,
+  "substeps": {
+    "blur": {
+      "mean_ms": 0.001,
+      "p95_ms": 0.002
+    },
+    "warp": {
+      "mean_ms": 0.178,
+      "p95_ms": 0.392
+    },
+    "convert": {
+      "mean_ms": 0.239,
+      "p95_ms": 0.496
+    },
+    "normalize": {
+      "mean_ms": 0.238,
+      "p95_ms": 0.493
+    },
+    "total": {
+      "mean_ms": 0.666,
+      "p95_ms": 1.363
+    }
+  }
+}
