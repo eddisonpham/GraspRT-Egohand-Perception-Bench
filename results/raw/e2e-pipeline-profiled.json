@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-08-30T16:23:18.305985+00:00",
+  "variant": "fast",
+  "engine": "/mnt/c/Users/phamt/Projects/egohand-bench-optimize/results/trt/wilor-fast-fp16.plan",
+  "n_images": 90,
+  "n_detected": 90,
+  "e2e_fps": 28.6,
+  "stages": {
+    "detector_preprocess": {
+      "mean_ms": 14.81,
+      "p95_ms": 17.388,
+      "std_ms": 1.478
+    },
+    "crop_collate": {
+      "mean_ms": 7.073,
+      "p95_ms": 10.813,
+      "std_ms": 2.029
+    },
+    "trt_reconstruction": {
+      "mean_ms": 12.639,
+      "p95_ms": 15.368,
+      "std_ms": 1.704
+    },
+    "postprocess": {
+      "mean_ms": 0.38,
+      "p95_ms": 0.513,
+      "std_ms": 0.071
+    },
+    "total": {
+      "mean_ms": 34.91,
+      "p95_ms": 39.428,
+      "std_ms": 3.072
+    }
+  },
+  "resource": {
+    "n_samples": 36,
+    "gpu_util_pct_peak": 71.0,
+    "gpu_util_pct_mean": 67.194,
+    "load_1m_peak": 0.609,
+    "load_1m_mean": 0.508,
+    "load_5m_peak": 0.158,
+    "load_5m_mean": 0.132,
+    "mem_used_mb_peak": 4600.0,
+    "mem_used_mb_mean": 4591.028,
+    "power_watts_peak": 72.37,
+    "power_watts_mean": 58.284,
+    "process_rss_mb_peak": 3122.5,
+    "process_rss_mb_mean": 3122.472,
+    "temp_c_peak": 66.0,
+    "temp_c_mean": 64.722
+  },
+  "vram_peak_mb": 1440.0
+}

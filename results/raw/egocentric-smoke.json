@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-08-30T16:20:22.357019+00:00",
+  "clips_dir": "/mnt/c/Users/phamt/Projects/egohand-bench-optimize/data/egocentric_clips",
+  "n_clips": 2,
+  "total_frames": 300,
+  "total_detected": 298,
+  "overall": "PASS",
+  "resource": {
+    "n_samples": 246,
+    "gpu_util_pct_peak": 89.0,
+    "gpu_util_pct_mean": 41.833,
+    "load_1m_peak": 2.126,
+    "load_1m_mean": 2.021,
+    "load_5m_peak": 0.541,
+    "load_5m_mean": 0.499,
+    "mem_used_mb_peak": 3409.0,
+    "mem_used_mb_mean": 3385.419,
+    "power_watts_peak": 78.22,
+    "power_watts_mean": 44.001,
+    "process_rss_mb_peak": 2899.0,
+    "process_rss_mb_mean": 2826.209,
+    "temp_c_peak": 70.0,
+    "temp_c_mean": 64.663
+  },
+  "results": [
+    {
+      "clip": "clip_01_synthetic.mp4",
+      "total_frames": 150,
+      "source_fps": 15.0,
+      "detected_frames": 149,
+      "missed_frames": 1,
+      "detection_rate": 0.993,
+      "avg_confidence": 1.0,
+      "joints_abs_max_range": [
+        0.087433,
+        0.171074
+      ],
+      "latency_ms": {
+        "mean": 136.02,
+        "p95": 58.82,
+        "std": 1034.6
+      },
+      "effective_fps": 7.4,
+      "all_joints_finite": true,
+      "all_confidence_valid": true
+    },
+    {
+      "clip": "clip_02_synthetic.mp4",
+      "total_frames": 150,
+      "source_fps": 15.0,
+      "detected_frames": 149,
+      "missed_frames": 1,
+      "detection_rate": 0.993,
+      "avg_confidence": 1.0,
+      "joints_abs_max_range": [
+        0.086334,
+        0.174377
+      ],
+      "latency_ms": {
+        "mean": 50.75,
+        "p95": 59.34,
+        "std": 5.5
+      },
+      "effective_fps": 19.7,
+      "all_joints_finite": true,
+      "all_confidence_valid": true
+    }
+  ]
+}
