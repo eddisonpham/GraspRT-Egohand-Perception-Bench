@@ -1,0 +1,11 @@
+{
+  "n_images": 120,
+  "max_joints_diff": 0.0,
+  "serial_fps": 30.4,
+  "serial_mean_ms": 32.897,
+  "serial_p95_ms": 37.549,
+  "two_stream_fps": 29.34,
+  "two_stream_mean_ms": 34.082,
+  "two_stream_p95_ms": 39.487,
+  "speedup_x": 0.965
+}

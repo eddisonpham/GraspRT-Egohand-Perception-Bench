@@ -98,3 +98,29 @@ multi-stream negative: the wall is GPU SMs, not Python/transfer overhead.
 **Verdict**: software pipelining yields no meaningful end-to-end gain here and is a near-negative,
 recorded for completeness. The e2e pipeline stays single-threaded serial (simpler, no correctness
 risk) at its standing 28.6-28.9 FPS.
+
+## Two-stream overlap (det_stream + trt_stream) — negative (2026-08-30)
+
+Within a single frame the detector and reconstruction are data-dependent (recon runs on the
+detector's crop), so they cannot overlap inside one frame. The only real overlap is ACROSS
+frames: detector[N+1] on `det_stream` while recon[N] runs on `trt_stream`. That scheduling was
+wired explicitly (`optimize/bench_stream_overlap.py`) and benchmarked vs the serialized path.
+
+| Scheduling | FPS | mean ms | p95 ms |
+|---|---:|---:|---:|
+| Serialized | 30.4 | 32.90 | 37.55 |
+| Two-stream | 29.3 | 34.08 | 39.49 |
+
+Speedup **0.97x** (two-stream is *slightly slower*). Outputs remain bit-identical (max |joints|
+diff = 0.0).
+
+Two-stream overlap is a **negative**: putting detector forward (13.8ms) and recon (12.6ms) on
+separate streams does not help because both saturate the GPU SMs — there is no spare SM
+throughput to recover — and stream-switch scheduling adds a small overhead on top. This is
+direct, evidence-backed confirmation that the pipeline is GPU-SM-bound end-to-end, not
+stream-scheduling-bound. Consistent with the double-buffer (1.03x) and multi-stream (flat)
+negatives.
+
+**Verdict**: rejected; the serialized path remains (simpler, no downside). The e2e wall is GPU
+SM throughput, now confirmed three independent ways (compile, stream overlap, multi-stream),
+and no scheduling rearrangement recovers it.
