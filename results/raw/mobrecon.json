@@ -1,0 +1,72 @@
+{
+  "model": "mobrecon",
+  "variant": "default",
+  "commit": "unknown",
+  "protocol": {
+    "warmup": 20,
+    "timed_iterations": 200,
+    "single_dominant_hand": true,
+    "vram_ceiling_mb": 6000
+  },
+  "device": "cuda (Eddison)",
+  "latency_ms": {
+    "mean": 19.76046989440918,
+    "median": 17.549424171447754,
+    "p95": 34.45713958740234,
+    "std": 7.326296275317982
+  },
+  "fps": 50.60608403259325,
+  "vram_mb": {
+    "torch_peak": 69.202944,
+    "nvidia_smi_peak": 1210.0,
+    "nvidia_smi_samples": [
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0,
+      1210.0
+    ]
+  },
+  "accuracy": {
+    "subset": "dev",
+    "pa_mpjpe_mm": 35.6645694694521,
+    "pa_mpjpe_std_mm": 6.752448033000716,
+    "pa_mpvpe_mm": 46.25512600760749,
+    "pa_mpvpe_std_mm": 6.802911823074588,
+    "f_score_5mm": 0.044960586908403044,
+    "f_score_15mm": 0.3161781630311687
+  },
+  "model_size_mb": 1384.633399,
+  "n_eval_images": 200,
+  "n_predictions": 200,
+  "n_misses": 0,
+  "notes": "ordered-spiral-fix"
+}

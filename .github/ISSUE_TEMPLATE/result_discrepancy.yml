@@ -1,0 +1,32 @@
+name: Result discrepancy
+description: A measured number disagrees with a published or expected value
+labels: ["result-discrepancy"]
+body:
+  - type: input
+    id: metric
+    attributes:
+      label: Metric
+      placeholder: "PA-MPJPE / latency mean / VRAM peak / F-score"
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model + variant
+      placeholder: "wilor-fast / mobrecon / mediapipe"
+    validations:
+      required: true
+  - type: textarea
+    id: values
+    attributes:
+      label: Reported vs expected
+      description: Your measured number, the reference number, and the source of the reference (paper section, prior run JSON, etc.).
+    validations:
+      required: true
+  - type: input
+    id: rawfile
+    attributes:
+      label: Raw artifact
+      placeholder: "results/raw/wilor-fast.json"
+    validations:
+      required: true

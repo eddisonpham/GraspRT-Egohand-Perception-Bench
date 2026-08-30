@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-08-30T14:08:04.076154+00:00",
+  "per_engine": {
+    "fp16": {
+      "n": 100,
+      "pa_mpjpe_vs_gt_mm": 5.544,
+      "pa_mpjpe_std_mm": 2.137
+    },
+    "int8": {
+      "n": 100,
+      "pa_mpjpe_vs_gt_mm": 9.438,
+      "pa_mpjpe_std_mm": 2.686
+    }
+  },
+  "gate": {
+    "int8_vs_fp16_delta_mm": 3.894,
+    "gate_threshold_mm": 0.5,
+    "gate_passed": false
+  }
+}

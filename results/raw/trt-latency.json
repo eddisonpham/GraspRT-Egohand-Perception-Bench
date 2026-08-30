@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-08-30T13:38:05.529087+00:00",
+  "engine": "results/trt/wilor-fast-int8.plan",
+  "trt": "10.16.1.11",
+  "latency": {
+    "mean_ms": 10.304,
+    "p50_ms": 10.318,
+    "p95_ms": 13.312,
+    "p99_ms": 13.557,
+    "fps": 97.05,
+    "n": 200
+  },
+  "gate": {
+    "joints_max_abs_diff": 0.02850341796875,
+    "verts_max_abs_diff": 0.029144287109375,
+    "pa_mpjpe_vs_pytorch_mm": 5.870619113210878
+  }
+}

@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible problem in the benchmark/optimization pipeline
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A concise description + the exact command you ran.
+      placeholder: "`python benchmark/run_benchmark.py --model wilor --variant fast` raised ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      description: What you expected, what you got (paste numbers/errors).
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, GPU, torch version, conda env name.
+      placeholder: "WSL2 Ubuntu 26.04, RTX 5060 (sm_120), torch 2.11.0+cu128, env egohand"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal repro
+      description: Exact shell commands (incl. env vars) from a clean checkout.
+      render: bash
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Affected stage
+      options:
+        - Environment setup
+        - Dataset prep
+        - Model integration (wrapper)
+        - Benchmark harness
+        - Decision matrix / aggregate
+        - ONNX export
+        - TensorRT engine
+        - INT8 calibration
+        - Tests / audit
+        - Other
+    validations:
+      required: true

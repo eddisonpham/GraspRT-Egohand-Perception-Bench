@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-08-30T13:26:12.416724+00:00",
+  "model": "wilor-fast",
+  "preprocess_plus_detector": {
+    "mean_ms": 17.487,
+    "p95_ms": 21.303,
+    "n": 40
+  },
+  "crop_collate": {
+    "mean_ms": 2.875,
+    "p95_ms": 5.619,
+    "n": 50
+  },
+  "model_forward": {
+    "mean_ms": 27.661,
+    "p95_ms": 34.042,
+    "n": 50
+  },
+  "postprocess": {
+    "mean_ms": 0.312,
+    "p95_ms": 0.77,
+    "n": 50
+  },
+  "sum_of_stages_ms": 48.335
+}

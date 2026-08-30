@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install (CPU-only subset)
+        run: |
+          python -m pip install --upgrade pip
+          # Install only what the no-GPU tests need; skip torch/onnxruntime/tensorrt
+          # (they are optional imports inside the audit executors' __main__ blocks).
+          pip install numpy opencv-python matplotlib pytest pytest-cov
+
+      - name: Pytest suite
+        run: python -m pytest tests/ -q --no-header
+
+      - name: Black-box audit — metrics
+        run: python tests/audit_metrics_blackbox.py
+
+      - name: Black-box audit — aggregate scoring
+        run: python tests/audit_aggregate_blackbox.py
+
+      - name: Black-box audit — optimize CLI/IO contracts
+        run: python tests/audit_optimize_io_blackbox.py

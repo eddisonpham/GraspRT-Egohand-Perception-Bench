@@ -1,0 +1,38 @@
+{
+  "model": "mediapipe",
+  "variant": "default",
+  "commit": "unknown",
+  "protocol": {
+    "warmup": 20,
+    "timed_iterations": 200,
+    "single_dominant_hand": true,
+    "vram_ceiling_mb": 6000
+  },
+  "device": "cpu (Eddison)",
+  "latency_ms": {
+    "mean": 34.35132899438031,
+    "median": 34.66950007714331,
+    "p95": 46.502735011745244,
+    "std": 7.1095990648992755
+  },
+  "fps": 29.11095521700469,
+  "vram_mb": {
+    "torch_peak": null,
+    "nvidia_smi_peak": null,
+    "nvidia_smi_samples": []
+  },
+  "accuracy": {
+    "subset": "dev",
+    "pa_mpjpe_mm": 15.882661169318256,
+    "pa_mpjpe_std_mm": 6.269502168965687,
+    "pa_mpvpe_mm": null,
+    "pa_mpvpe_std_mm": null,
+    "f_score_5mm": null,
+    "f_score_15mm": null
+  },
+  "model_size_mb": null,
+  "n_eval_images": 200,
+  "n_predictions": 180,
+  "n_misses": 20,
+  "notes": "Native Windows MediaPipe Tasks CPU baseline; 200 FreiHAND dev images"
+}

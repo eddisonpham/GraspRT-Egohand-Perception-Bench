@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-08-30T12:46:18.032511+00:00",
+  "onnx": "/mnt/c/Users/phamt/Projects/egohand-bench-optimize/egohand-bench/results/onnx/wilor-fast.onnx",
+  "variant": "fast",
+  "results": [
+    {
+      "label": "native:pytorch",
+      "mean_ms": 24.012,
+      "p50_ms": 23.008,
+      "p95_ms": 31.55,
+      "p99_ms": 39.33,
+      "fps": 41.65,
+      "n": 100
+    },
+    {
+      "label": "ort:CUDAExecutionProvider",
+      "mean_ms": 52.11,
+      "p50_ms": 49.287,
+      "p95_ms": 84.302,
+      "p99_ms": 91.197,
+      "fps": 19.19,
+      "n": 100
+    },
+    {
+      "label": "ort:CPUExecutionProvider",
+      "mean_ms": 1209.492,
+      "p50_ms": 1184.644,
+      "p95_ms": 1599.495,
+      "p99_ms": 1692.121,
+      "fps": 0.83,
+      "n": 100
+    }
+  ]
+}
