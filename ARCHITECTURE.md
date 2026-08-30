@@ -62,6 +62,11 @@ WiLoR-fast ──► export_onnx (trace function, bypass Lightning) ──► *.
 - `bench_trt.py` / `bench_trt_gate.py` — TRT latency + accuracy gate vs GT (pass threshold: PA-MPJPE within 0.5 mm of FP16 baseline).
 - `build_trt_int8.py` — INT8 entropy PTQ. Honest negative: REJECTED (+3.89 mm; MANO LBS chain amplifies quantization error).
 - `bench_breakdown.py` — per-stage latency (preprocess/detector/reconstruction/postprocess).
+- `finetune_wilor_lora.py` — LoRA fine-tune of the WiLoR backbone on 3D-joint GT. Per-epoch val MPJPE monitoring, `ReduceLROnPlateau`, patience early stop with best-state snapshot+restore. Writes the best adapter + reported `val_history`.
+- `merge_wilor_lora.py` — folds a saved LoRA adapter into the backbone (`merge_and_unload`) so inference has zero per-layer LoRA cost; re-verifies the held-out MPJPE gain survives the merge.
+- `bench_egocentric_jitter.py` — temporal-smoothing study (MA5/MA9, one-Euro) on synthetic ego clips; reports jitter reduction and distortion.
+- `bench_box_cadence.py` — detector-cadence (box reuse every K frames) throughput + box-stability analysis on ego clips.
+- `bench_pipelined.py` / `bench_stream_overlap.py` — software-pipelining / two-stream scheduling negatives (GPU-SM bound).
 
 **`scripts/`** — `gpu_smoke_test.py` validates VRAM ceiling and leak-free iteration.
 
@@ -77,7 +82,9 @@ WiLoR-fast ──► export_onnx (trace function, bypass Lightning) ──► *.
 
 **No synthetic accuracy.** If a model cannot run, it emits no row — `hamer_wrapper` raises, `wilor_wrapper` returns `[]` on detector miss. The aggregate skips JSON without `latency_ms` + `accuracy`.
 
-**Honest negatives recorded.** MobRecon's spiral ordering, INT8 PTQ, and HaMeR's environment block are all documented with the measured numbers, not silently dropped.
+**Honest negatives recorded.** MobRecon's spiral ordering, INT8 PTQ, HaMeR's environment block, and the scheduling negatives (pipelining, two-stream) are all documented with the measured numbers, not silently dropped.
+
+**Fine-tuning is merge-first.** The LoRA adapter is folded into the backbone weights before deployment, so the fine-tune improves held-out accuracy (7–13% joint error) with zero change to inference latency or VRAM. Training is fp32 (FP16 autocast hangs fp32-LoRA on this setup); it early-stops on a monitored validation set to avoid overfitting. The egocentric-domain gain is the untested upside gated on a license'd dataset (HOT3D).
 
 ## External dependencies
 

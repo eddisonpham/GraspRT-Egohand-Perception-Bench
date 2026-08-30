@@ -48,6 +48,16 @@ See [Setup](#setup) for full environment + asset requirements.
 
 The reconstruction graph is 79 FPS, but the YOLO detector (42%) + ViTDet crop (20%) dominate end-to-end latency. That pre-optimization path is the current bottleneck, not the TRT engine.
 
+### Post-optimization levers (measured)
+
+**Temporal smoothing — shake reduced without training.** MA9 / one-Euro filters cut joint jitter 64–90% (0.093 → 0.010 mm) at <0.07 mm distortion. One-Euro has the best noise-retention ratio. Zero accuracy cost, no re-inference.
+
+**Detection cadence — breaks 30 FPS, at a stated accuracy tradeoff.** Amortizing the GPU-bound detector across frames (detect every K-th, reuse the box) reaches 38.7 FPS (K=2) and 43.9 FPS (K=4) vs 28.4 baseline. Not free: consecutive-frame box drift is ~4 px median; a 4.85 px shift previously collapsed PA-MPJPE 5.65→21.4 mm, so stale crops trade per-frame accuracy on moving hands. Documented; not the default.
+
+**LoRA fine-tuning — accuracy up, zero inference cost.** Freezing the backbone and adapting only 5.26 M LoRA params (0.83% of 636 M) on real 3D-joint GT cut held-out MPJPE 7–13% (10.8 → 9.4 mm, two protocols) with no change to inference latency or VRAM after the adapter is merged into the weight matrices. Early-stopping + best-checkpoint restore guard against overfitting (val rose after ep 2 while train fell → stopped at best). Adapter/pipeline reproducible via `optimize/finetune_wilor_lora.py` + `optimize/merge_wilor_lora.py`; egocentric domain fine-tune is the tested-from-HOT3D next step.
+
+See [`agents/process/`](agents/process/) for the full optimization timeline + fine-tune-vs-baseline comparison.
+
 ---
 
 ## Architecture
