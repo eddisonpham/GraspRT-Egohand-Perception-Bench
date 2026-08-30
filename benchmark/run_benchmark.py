@@ -34,7 +34,7 @@ MODEL_IMPORTS = {
 
 
 def model_size_mb(model_name: str, extra_roots: list[Path] | None = None) -> float | None:
-    """Sum checkpoint files under conventional local/external model directories."""
+    """Sum checkpoint sizes under conventional model directories."""
     candidates = [ROOT / "models" / "weights", ROOT / "pretrained_models", ROOT / "checkpoints"]
     if model_name == "mobrecon":
         candidates.append(Path(os.environ.get("MOBRECON_ROOT", str(Path.home() / "src" / "HandMesh"))) / "downloads")
@@ -61,15 +61,11 @@ def run(args):
     from common.profiling import NvidiaSmiMonitor, time_infer, torch_peak_mb
 
     subset_path = ROOT / "data" / "freihand" / "subsets" / f"{args.subset}.json"
-    # Prefer WSL ext4 data root; loader handles this when FREIHAND_ROOT is unset.
     loader = FreiHandLoader(root=args.root, subset=None) if args.root else FreiHandLoader(subset=subset_path)
-    # For timing, choose first image with a prediction if possible; for accuracy, all images.
     sample_img, _, _ = loader[0]
     sample_batch = model.preprocess(sample_img)
     model.warmup(n=args.warmup)
 
-    # Separate process + reset after model load: allocator peak measures inference workload,
-    # while nvidia-smi captures actual process/model footprint.
     smi = NvidiaSmiMonitor(interval_s=0.05) if args.device != "cpu" else None
     if args.device != "cpu":
         import torch
@@ -84,7 +80,6 @@ def run(args):
     else:
         vram = {"torch_peak": None, "nvidia_smi_peak": None, "nvidia_smi_samples": []}
 
-    # Accuracy: first prediction only (single dominant hand protocol); count misses.
     errors, vert_errors, f5, f15 = [], [], [], []
     misses = 0
     for i in range(len(loader)):

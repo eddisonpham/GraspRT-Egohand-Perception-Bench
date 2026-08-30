@@ -37,22 +37,19 @@ class FreiHandLoader:
     def __init__(self, root: str | Path | None = None, subset: str | None = None):
         self.root = Path(root) if root else resolve_root()
         with open(self.root / "evaluation_xyz.json") as f:
-            self.joints = np.asarray(json.load(f), dtype=np.float32)  # (N,21,3) m
+            self.joints = np.asarray(json.load(f), dtype=np.float32)
         with open(self.root / "evaluation_K.json") as f:
-            self.K = np.asarray(json.load(f), dtype=np.float32)          # (N,3,3)
+            self.K = np.asarray(json.load(f), dtype=np.float32)
         with open(self.root / "evaluation_verts.json") as f:
-            self.verts = np.asarray(json.load(f), dtype=np.float32)  # (N,778,3) m
+            self.verts = np.asarray(json.load(f), dtype=np.float32)
         self.rgb_dir = self.root / "evaluation" / "rgb"
         self.n = self.joints.shape[0]
-        # A copied/sparse Windows test root may contain fewer image files than metadata rows.
-        # Keep requested indices valid for the available image set when explicitly requested.
         available = sorted(self.rgb_dir.glob("*.jpg"))
         self.available_indices = {int(p.stem) for p in available} if available else None
 
         if subset is not None:
             sub = Path(subset)
             if not sub.exists():
-                # try repo-relative
                 sub = Path(__file__).resolve().parent / "subsets" / Path(subset).name
             with open(sub) as f:
                 self.indices = json.load(f)

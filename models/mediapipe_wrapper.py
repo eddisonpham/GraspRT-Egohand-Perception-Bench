@@ -10,7 +10,6 @@ import sys
 
 import numpy as np
 
-# make `common` importable regardless of how this file is invoked (script or -m)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common.interface import BaseHandModel, HandPrediction  # noqa: E402
@@ -46,7 +45,6 @@ class MediaPipeHandModel(BaseHandModel):
         self._device = "cpu"
 
     def preprocess(self, image_bgr: np.ndarray):
-        # wrap BGR ndarray into mp.Image (SRGB) — convert BGR->RGB as documented
         rgb = image_bgr[:, :, ::-1].copy()
         import mediapipe as mp
         return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
@@ -56,9 +54,8 @@ class MediaPipeHandModel(BaseHandModel):
         preds: list[HandPrediction] = []
         if not res.hand_landmarks:
             return preds
-        lms = res.hand_world_landmarks[0]  # already 3D, meters, wrist-anchored
+        lms = res.hand_world_landmarks[0]
         joints = np.asarray([[p.x, p.y, p.z] for p in lms], dtype=np.float32)
-        # image-space 2D bbox (approx; use first & last landmark extremes + margin)
         im = res.hand_landmarks[0]
         xs = [p.x for p in im]
         ys = [p.y for p in im]
@@ -103,7 +100,6 @@ if __name__ == "__main__":
         indices = list(range(5))
     n_ok = 0
     for i, idx in enumerate(indices):
-        # Sparse Windows smoke-root uses its actual file IDs; regular root uses subset index.
         img, gt, K = L[i]
         batch = m.preprocess(img)
         preds = m.infer(batch)
