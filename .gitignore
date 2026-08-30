@@ -105,3 +105,6 @@ desktop.ini
 logs/
 wandb/
 mlruns/
+
+# Large fine-tuned model artifacts — rebuild via merge_wilor_lora.py, dont store in git
+results/finetuned/merged_backbone/
